@@ -1,0 +1,262 @@
+---
+title: "Evolución de la esperanza de vida y desarrollo económico"
+author: "Gemma Planas"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# 1. Introducción
+
+## Objetivo principal
+
+El objetivo principal de este proyecto es analizar la evolución de la esperanza de vida a nivel mundial y estudiar su relación con el desarrollo económico de los países entre 1952 y 2007, utilizando datos de Gapminder.
+
+## Objetivos específicos
+
+Los objetivos específicos del proyecto son:
+
+1. Analizar la evolución temporal de la esperanza de vida.
+2. Comparar la esperanza de vida media entre continentes.
+3. Analizar la relación entre el PIB per cápita y la esperanza de vida.
+4. Describir los principales indicadores de la base de datos.
+5. Generar resultados reproducibles mediante código R.
+
+# 2. Datos y metodología
+
+Para realizar el análisis se ha utilizado la base de datos Gapminder, que contiene información sobre diferentes indicadores socioeconómicos de distintos países a lo largo del tiempo.
+
+La base de datos utilizada contiene información de **142 países**, pertenecientes a **5 continentes**, durante el periodo comprendido entre **1952 y 2007**.
+
+Las principales variables utilizadas son:
+
+- `country`: país.
+- `continent`: continente.
+- `year`: año.
+- `lifeExp`: esperanza de vida.
+- `pop`: población.
+- `gdpPercap`: PIB per cápita.
+
+Los datos fueron previamente explorados y depurados mediante código R. Durante este proceso se comprobaron las dimensiones de la base, los valores perdidos, los posibles duplicados y las categorías disponibles.
+
+También se crearon nuevas variables relacionadas con la década y el nivel económico de los países.
+
+# 3. Resultados
+
+## 3.1. Evolución de la esperanza de vida
+
+En primer lugar, se analizó la evolución de la esperanza de vida media a lo largo del periodo estudiado.
+
+```{r cargar-datos, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+datos <- read_csv("../data/gapminder_limpio.csv")
+
+evolucion_vida <- datos %>%
+  group_by(year) %>%
+  summarise(
+    esperanza_vida_media = mean(lifeExp),
+    .groups = "drop"
+  )
+```
+
+La siguiente tabla muestra la esperanza de vida media para cada año disponible:
+
+```{r tabla-evolucion, echo=TRUE}
+evolucion_vida
+```
+
+Para facilitar la interpretación, se representa gráficamente la evolución temporal:
+
+```{r grafico-evolucion, echo=TRUE, fig.width=8, fig.height=5}
+ggplot(
+  evolucion_vida,
+  aes(x = year, y = esperanza_vida_media)
+) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Evolución de la esperanza de vida mundial",
+    x = "Año",
+    y = "Esperanza de vida media (años)"
+  ) +
+  theme_minimal()
+```
+
+La esperanza de vida media presenta una tendencia claramente ascendente durante todo el periodo analizado. En 1952 se situaba aproximadamente en **49,1 años**, mientras que en 2007 alcanzaba aproximadamente **67,0 años**.
+
+Por tanto, durante el periodo estudiado se observa una mejora global de la esperanza de vida.
+
+# 4. Diferencias entre continentes
+
+## 4.1. Esperanza de vida media por continente
+
+A continuación, se calcula la esperanza de vida media para cada continente.
+
+```{r esperanza-continente, echo=TRUE}
+vida_continente <- datos %>%
+  group_by(continent) %>%
+  summarise(
+    esperanza_vida_media = mean(lifeExp),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(esperanza_vida_media))
+
+vida_continente
+```
+
+Los resultados muestran diferencias entre los continentes analizados.
+
+```{r grafico-continentes, echo=TRUE, fig.width=8, fig.height=5}
+ggplot(
+  vida_continente,
+  aes(
+    x = reorder(continent, esperanza_vida_media),
+    y = esperanza_vida_media
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Esperanza de vida media por continente",
+    x = "Continente",
+    y = "Esperanza de vida media (años)"
+  ) +
+  theme_minimal()
+```
+
+El gráfico permite observar que la esperanza de vida media no es homogénea entre los diferentes continentes. Estas diferencias pueden estar relacionadas con factores económicos, sociales, sanitarios y demográficos.
+
+# 5. Relación entre PIB per cápita y esperanza de vida
+
+Uno de los objetivos principales del proyecto es estudiar si existe una relación entre el nivel de desarrollo económico y la esperanza de vida.
+
+Para ello se calcula la correlación entre el PIB per cápita y la esperanza de vida.
+
+```{r correlacion, echo=TRUE}
+correlacion <- cor(
+  datos$gdpPercap,
+  datos$lifeExp
+)
+
+correlacion
+```
+
+El valor obtenido es aproximadamente **0,584**, lo que indica una **relación positiva moderada** entre ambas variables.
+
+A continuación se representa gráficamente esta relación:
+
+```{r grafico-pib, echo=TRUE, fig.width=8, fig.height=5}
+ggplot(
+  datos,
+  aes(x = gdpPercap, y = lifeExp)
+) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  scale_x_log10() +
+  labs(
+    title = "Relación entre PIB per cápita y esperanza de vida",
+    x = "PIB per cápita (escala logarítmica)",
+    y = "Esperanza de vida (años)"
+  ) +
+  theme_minimal()
+```
+
+El gráfico muestra una tendencia positiva. En términos generales, los países con un PIB per cápita más elevado tienden a presentar una mayor esperanza de vida.
+
+Sin embargo, es importante señalar que una correlación positiva **no implica causalidad**. Por tanto, los resultados muestran una asociación entre las variables, pero no permiten afirmar que un aumento del PIB provoque directamente un aumento de la esperanza de vida.
+
+# 6. Indicadores principales
+
+Para sintetizar los resultados del proyecto se construye una tabla resumen con los principales indicadores.
+
+```{r tabla-resumen, echo=TRUE}
+resumen <- tibble(
+  Indicador = c(
+    "Número de países",
+    "Número de continentes",
+    "Año inicial",
+    "Año final",
+    "Esperanza de vida inicial",
+    "Esperanza de vida final",
+    "PIB per cápita medio",
+    "Correlación PIB-esperanza de vida"
+  ),
+  Valor = c(
+    n_distinct(datos$country),
+    n_distinct(datos$continent),
+    min(datos$year),
+    max(datos$year),
+    round(
+      mean(
+        datos$lifeExp[
+          datos$year == min(datos$year)
+        ]
+      ),
+      1
+    ),
+    round(
+      mean(
+        datos$lifeExp[
+          datos$year == max(datos$year)
+        ]
+      ),
+      1
+    ),
+    round(mean(datos$gdpPercap), 0),
+    round(correlacion, 3)
+  )
+)
+
+resumen
+```
+
+Los principales resultados obtenidos son:
+
+- **142 países** incluidos en la base.
+- **5 continentes** representados.
+- Periodo de estudio de **1952 a 2007**.
+- Esperanza de vida media inicial de aproximadamente **49,1 años**.
+- Esperanza de vida media final de aproximadamente **67,0 años**.
+- PIB per cápita medio de aproximadamente **7.215 USD**.
+- Correlación entre PIB per cápita y esperanza de vida de aproximadamente **0,584**.
+
+# 7. Principales hallazgos
+
+Los resultados permiten identificar tres hallazgos principales.
+
+En primer lugar, se observa un **incremento considerable de la esperanza de vida mundial** durante el periodo analizado. La esperanza de vida media aumentó desde aproximadamente 49 años en 1952 hasta 67 años en 2007.
+
+En segundo lugar, existen **diferencias importantes entre continentes**. Esto indica que la evolución de la esperanza de vida no ha sido homogénea a nivel mundial.
+
+Finalmente, se observa una **relación positiva entre el PIB per cápita y la esperanza de vida**. La correlación obtenida, de aproximadamente 0,584, indica una asociación positiva moderada entre ambas variables.
+
+# 8. Conclusiones
+
+El análisis realizado permite concluir que la esperanza de vida experimentó una mejora sustancial entre 1952 y 2007.
+
+Los resultados también muestran diferencias entre continentes y una asociación positiva entre el nivel económico de los países y su esperanza de vida.
+
+En conjunto, los resultados son compatibles con la idea de que los países con mayores niveles de desarrollo económico presentan, en promedio, mejores indicadores de esperanza de vida.
+
+No obstante, el análisis realizado es principalmente descriptivo y correlacional. Por ello, no permite establecer relaciones causales entre las variables estudiadas.
+
+El proyecto demuestra además la utilidad de un flujo de trabajo reproducible mediante R, en el que los datos, el código de análisis, las visualizaciones y el informe técnico pueden mantenerse organizados y actualizados dentro de un mismo proyecto.
+
+# 9. Reproducibilidad
+
+Todo el análisis ha sido desarrollado en RStudio y organizado dentro de un repositorio de GitHub.
+
+La estructura del proyecto permite separar los diferentes componentes del análisis:
+
+- `R/01_limpieza.R`: importación y depuración de los datos.
+- `R/02_analisis.R`: análisis estadístico y generación de gráficos.
+- `data/gapminder_limpio.csv`: base de datos depurada.
+- `dashboard/app.R`: dashboard interactivo.
+- `informe/informe_gapminder.Rmd`: informe técnico reproducible.
+
+Esta organización permite que otro usuario pueda acceder al código y reproducir los principales resultados del proyecto.
