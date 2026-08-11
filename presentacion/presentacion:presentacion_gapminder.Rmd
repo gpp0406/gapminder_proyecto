@@ -1,0 +1,305 @@
+---
+title: "Gapminder: esperanza de vida y desarrollo económico"
+author: "Gemma Planas"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+---
+
+## Objetivo del proyecto
+
+### Objetivo principal
+
+Analizar la evolución de la esperanza de vida a nivel mundial y estudiar su relación con el desarrollo económico entre 1952 y 2007.
+
+### Objetivos específicos
+
+- Analizar la evolución temporal de la esperanza de vida.
+- Comparar la esperanza de vida entre continentes.
+- Estudiar la relación entre PIB per cápita y esperanza de vida.
+- Resumir los principales indicadores del conjunto de datos.
+
+---
+
+## Datos
+
+La base de datos utilizada es **Gapminder**, que contiene indicadores socioeconómicos de diferentes países a lo largo del tiempo.
+
+### Características principales
+
+- **142 países**
+- **5 continentes**
+- Periodo: **1952–2007**
+- Variables principales:
+  - País
+  - Continente
+  - Año
+  - Esperanza de vida
+  - Población
+  - PIB per cápita
+
+Los datos fueron previamente explorados y depurados mediante código R.
+
+---
+
+## Evolución de la esperanza de vida
+
+```{r cargar-datos, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+datos <- read_csv("../data/gapminder_limpio.csv")
+
+evolucion_vida <- datos %>%
+  group_by(year) %>%
+  summarise(
+    esperanza_vida_media = mean(lifeExp),
+    .groups = "drop"
+  )
+```
+
+```{r grafico-vida, echo=FALSE, fig.width=9, fig.height=5}
+ggplot(
+  evolucion_vida,
+  aes(x = year, y = esperanza_vida_media)
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Evolución de la esperanza de vida mundial",
+    x = "Año",
+    y = "Esperanza de vida media (años)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+---
+
+## Evolución de la esperanza de vida
+
+### Principal resultado
+
+La esperanza de vida media aumentó de:
+
+**49,1 años en 1952**
+
+a
+
+**67,0 años en 2007**
+
+Esto supone una mejora de aproximadamente **17,9 años** durante el periodo estudiado.
+
+### Interpretación
+
+Se observa una tendencia ascendente clara a lo largo de todo el periodo.
+
+---
+
+## Diferencias entre continentes
+
+```{r continente, echo=FALSE}
+vida_continente <- datos %>%
+  group_by(continent) %>%
+  summarise(
+    esperanza_vida_media = mean(lifeExp),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(esperanza_vida_media))
+```
+
+```{r grafico-continentes, echo=FALSE, fig.width=9, fig.height=5}
+ggplot(
+  vida_continente,
+  aes(
+    x = reorder(continent, esperanza_vida_media),
+    y = esperanza_vida_media
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Esperanza de vida media por continente",
+    x = "Continente",
+    y = "Esperanza de vida media (años)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+---
+
+## PIB y esperanza de vida
+
+```{r correlacion, echo=FALSE}
+correlacion <- cor(
+  datos$gdpPercap,
+  datos$lifeExp
+)
+```
+
+```{r grafico-pib, echo=FALSE, fig.width=9, fig.height=5}
+ggplot(
+  datos,
+  aes(x = gdpPercap, y = lifeExp)
+) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  scale_x_log10() +
+  labs(
+    title = "Relación entre PIB per cápita y esperanza de vida",
+    x = "PIB per cápita (escala logarítmica)",
+    y = "Esperanza de vida (años)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+---
+
+## PIB y esperanza de vida
+
+### Resultado principal
+
+La correlación entre PIB per cápita y esperanza de vida es:
+
+# `r round(correlacion, 3)`
+
+### Interpretación
+
+Existe una **asociación positiva moderada** entre ambas variables.
+
+En general, los países con un PIB per cápita más elevado tienden a presentar una mayor esperanza de vida.
+
+**Importante:** correlación no implica causalidad.
+
+---
+
+## Indicadores principales
+
+```{r tabla-resumen, echo=FALSE}
+resumen <- tibble(
+  Indicador = c(
+    "Países",
+    "Continentes",
+    "Año inicial",
+    "Año final",
+    "Esperanza de vida inicial",
+    "Esperanza de vida final",
+    "PIB per cápita medio",
+    "Correlación PIB - vida"
+  ),
+  Valor = c(
+    n_distinct(datos$country),
+    n_distinct(datos$continent),
+    min(datos$year),
+    max(datos$year),
+    round(
+      mean(
+        datos$lifeExp[
+          datos$year == min(datos$year)
+        ]
+      ),
+      1
+    ),
+    round(
+      mean(
+        datos$lifeExp[
+          datos$year == max(datos$year)
+        ]
+      ),
+      1
+    ),
+    round(mean(datos$gdpPercap), 0),
+    round(correlacion, 3)
+  )
+)
+
+knitr::kable(
+  resumen,
+  col.names = c("Indicador", "Valor"),
+  align = c("l", "c")
+)
+```
+
+---
+
+## Principales hallazgos
+
+### 1. Mejora de la esperanza de vida
+
+La esperanza de vida mundial aumentó considerablemente entre 1952 y 2007.
+
+### 2. Diferencias geográficas
+
+La esperanza de vida media presenta diferencias importantes entre continentes.
+
+### 3. Relación con el desarrollo económico
+
+Existe una asociación positiva entre PIB per cápita y esperanza de vida.
+
+### 4. Análisis reproducible
+
+Todos los resultados y gráficos se generan mediante código R.
+
+---
+
+## Conclusiones
+
+### ¿Qué hemos encontrado?
+
+- La esperanza de vida mundial aumentó de **49,1 a 67,0 años**.
+- Existen diferencias de esperanza de vida entre continentes.
+- El PIB per cápita presenta una relación positiva con la esperanza de vida.
+- La correlación observada es de aproximadamente **0,584**.
+
+### Conclusión general
+
+Los países con mayores niveles de desarrollo económico presentan, en promedio, una mayor esperanza de vida.
+
+Sin embargo, estos resultados son **descriptivos y correlacionales** y no permiten establecer causalidad.
+
+---
+
+## Reproducibilidad
+
+El proyecto se ha desarrollado utilizando:
+
+**RStudio + R + GitHub + R Markdown + Shiny**
+
+### Estructura del proyecto
+
+```text
+R/
+├── 01_limpieza.R
+└── 02_analisis.R
+
+data/
+└── gapminder_limpio.csv
+
+dashboard/
+└── app.R
+
+informe/
+└── informe_gapminder.Rmd
+
+presentacion/
+└── presentacion_gapminder.Rmd
+```
+
+Todo el análisis puede ser reproducido a partir del código y los datos incluidos en el repositorio.
+
+---
+
+## Gracias
+
+# Gapminder
+
+### Esperanza de vida y desarrollo económico
+
+**Gemma Planas**
+
+
+
+
+
+
