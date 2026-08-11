@@ -110,3 +110,4 @@ grafico_pib <- ggplot(
   theme_minimal()
 
 grafico_pib
+
